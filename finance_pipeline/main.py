@@ -1,6 +1,7 @@
 import pandas as pd
+from sqlalchemy.engine import Engine
 from .data_fetcher import FetchConfig, fetch_data
-from .database import get_connection
+from .database import get_engine
 
 
 def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
@@ -20,11 +21,9 @@ def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def load_to_db(df: pd.DataFrame) -> None:
-    conn = get_connection()
-    df.to_sql("prices", conn, if_exists="append", index_label="date")
-    conn.commit()
-    conn.close()
+def load_to_db(df: pd.DataFrame, engine: Engine | None = None) -> None:
+    engine = engine or get_engine()
+    df.to_sql("prices", engine, if_exists="append", index_label="date")
 
 
 def run_pipeline(config: FetchConfig = FetchConfig()) -> None:
