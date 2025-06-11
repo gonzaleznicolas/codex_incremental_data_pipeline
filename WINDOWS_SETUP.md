@@ -29,4 +29,16 @@ This project requires Python 3.9 or newer. The steps below show how to run the p
    python -m finance_pipeline.main
    ```
 
+8. Inspect the SQLite database created by the pipeline (optional):
+   The pipeline writes its results to `data.db` in the project directory. You
+   can examine this file using the `sqlite3` CLI that ships with Python:
+   ```bash
+   python -m sqlite3 data.db
+   ```
+   From the prompt you can list tables with `.tables` and query data, e.g.:
+   ```sql
+   SELECT COUNT(*) FROM prices;
+   .quit
+   ```
+
 Use Cursor IDE to run these commands in its integrated terminal.
