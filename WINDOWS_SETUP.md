@@ -22,7 +22,7 @@ This project requires Python 3.9 or newer. The steps below show how to run the p
    ```
 6. (Optional) run the unit tests:
    ```bash
-   pytest -q
+   python -m pytest -q
    ```
 7. Execute the data pipeline:
    ```bash
