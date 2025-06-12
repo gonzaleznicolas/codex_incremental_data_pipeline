@@ -18,9 +18,14 @@ def compute_indicators_and_suggested_positions(df: pd.DataFrame) -> pd.DataFrame
     df = df.rename(columns=lambda c: c.strip().lower().replace(" ", "_")).sort_index()
     df.index = pd.to_datetime(df.index).tz_localize(None)
 
-    # Calculate 30-day moving average on the closing price and derive ratio
+    # Calculate 30-day moving average and Bollinger Bands
     ma30 = df["close"].rolling(window=30).mean()
+    std30 = df["close"].rolling(window=30).std()
+    upper_bb = ma30 + 2 * std30
+    lower_bb = ma30 - 2 * std30
+
     df["price_over_ma30"] = df["close"] / ma30
+    df["bb_pct"] = (df["close"] - lower_bb) / (upper_bb - lower_bb)
     df["suggested_position"] = np.where(
         df["price_over_ma30"] > 1,
         "Long",

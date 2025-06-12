@@ -45,6 +45,7 @@ prices = Table(
     Column("stock_splits", Float),
     Column("stock_id", Integer, ForeignKey("stocks.id")),
     Column("price_over_ma30", Float),
+    Column("bb_pct", Float),
     Column("suggested_position", Integer, ForeignKey("position.id")),
 )
 

@@ -13,6 +13,12 @@ def test_compute_indicators_and_suggested_positions():
     expected_ratio = data['close'] / ma30
     expected_ratio.index = result.index
     pd.testing.assert_series_equal(result['price_over_ma30'], expected_ratio, check_names=False)
+    std30 = pd.Series(data['close']).rolling(30).std()
+    upper = ma30 + 2 * std30
+    lower = ma30 - 2 * std30
+    expected_bb = (data['close'] - lower) / (upper - lower)
+    expected_bb.index = result.index
+    pd.testing.assert_series_equal(result['bb_pct'], expected_bb, check_names=False)
     assert result.loc[result.index[29], 'suggested_position'] == 'Cash'
     assert result.loc[result.index[30], 'suggested_position'] == 'Long'
 
@@ -50,6 +56,7 @@ def test_load_to_db_creates_stock_entries(tmp_path):
             "stock_splits": [0.0],
             "symbol": ["AAPL"],
             "price_over_ma30": [1.0],
+            "bb_pct": [1.0],
             "suggested_position": ["Cash"],
         },
         index=pd.to_datetime(["2022-01-03"]),
@@ -62,5 +69,6 @@ def test_load_to_db_creates_stock_entries(tmp_path):
     prices_df = pd.read_sql_table("prices", engine)
     assert stocks_df.loc[0, "symbol"] == "AAPL"
     assert prices_df.loc[0, "stock_id"] == stocks_df.loc[0, "id"]
+    assert prices_df.loc[0, "bb_pct"] == 1.0
     pos_df = pd.read_sql_table("position", engine)
     assert prices_df.loc[0, "suggested_position"] == pos_df[pos_df["name"] == "Cash"].iloc[0]["id"]

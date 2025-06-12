@@ -12,3 +12,4 @@ def test_get_engine_creates_table(tmp_path):
     price_columns = {col['name'] for col in inspector.get_columns('prices')}
     assert 'stock_id' in price_columns
     assert 'suggested_position' in price_columns
+    assert 'bb_pct' in price_columns
