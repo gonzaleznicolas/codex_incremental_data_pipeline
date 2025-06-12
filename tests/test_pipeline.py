@@ -1,6 +1,8 @@
 import pandas as pd
-from finance_pipeline.main import compute_moving_averages
+from finance_pipeline.main import compute_moving_averages, load_to_db
 from finance_pipeline.data_fetcher import FetchConfig, fetch_data
+from finance_pipeline.database import get_engine
+from sqlalchemy import inspect
 from unittest import mock
 
 
@@ -33,3 +35,29 @@ def test_fetch_data():
         assert not df.empty
         assert 'symbol' in df.columns
         instance.history.assert_called_once_with(start='2021-12-04', end='2022-01-10')
+
+
+def test_load_to_db_creates_stock_entries(tmp_path):
+    engine = get_engine(tmp_path / "test.db")
+    df = pd.DataFrame(
+        {
+            "open": [1.0],
+            "high": [1.0],
+            "low": [1.0],
+            "close": [1.0],
+            "volume": [1.0],
+            "dividends": [0.0],
+            "stock_splits": [0.0],
+            "symbol": ["AAPL"],
+            "price_over_ma30": [1.0],
+        },
+        index=pd.to_datetime(["2022-01-03"]),
+    )
+    load_to_db(df, engine)
+    insp = inspect(engine)
+    tables = set(insp.get_table_names())
+    assert tables == {"stocks", "prices"}
+    stocks_df = pd.read_sql_table("stocks", engine)
+    prices_df = pd.read_sql_table("prices", engine)
+    assert stocks_df.loc[0, "symbol"] == "AAPL"
+    assert prices_df.loc[0, "stock_id"] == stocks_df.loc[0, "id"]

@@ -5,4 +5,8 @@ from sqlalchemy import inspect
 def test_get_engine_creates_table(tmp_path):
     engine = get_engine(tmp_path / "test.db")
     inspector = inspect(engine)
-    assert "prices" in inspector.get_table_names()
+    tables = inspector.get_table_names()
+    assert "prices" in tables
+    assert "stocks" in tables
+    price_columns = {col['name'] for col in inspector.get_columns('prices')}
+    assert 'stock_id' in price_columns
