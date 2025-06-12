@@ -14,6 +14,7 @@ def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
 
     # Normalise columns: lowercase and replace spaces with underscores
     df = df.rename(columns=lambda c: c.strip().lower().replace(" ", "_")).sort_index()
+    df.index = pd.to_datetime(df.index).tz_localize(None)
 
     # Calculate moving averages on the closing price
     df["ma7"] = df["close"].rolling(window=7).mean()
@@ -32,6 +33,7 @@ def run_pipeline(config: FetchConfig = FetchConfig()) -> None:
         print("No data fetched")
         return
     data = compute_moving_averages(data)
+    data = data.loc[pd.to_datetime(config.start): pd.to_datetime(config.end)]
     load_to_db(data)
 
 
