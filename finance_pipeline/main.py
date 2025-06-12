@@ -26,11 +26,41 @@ def compute_indicators_and_suggested_positions(df: pd.DataFrame) -> pd.DataFrame
 
     df["price_over_ma30"] = df["close"] / ma30
     df["bb_pct"] = (df["close"] - lower_bb) / (upper_bb - lower_bb)
-    df["suggested_position"] = np.where(
+
+    ma_pos = np.where(
         df["price_over_ma30"] > 1,
         "Long",
         np.where(df["price_over_ma30"] < 1, "Short", "Cash"),
     )
+
+    bb_pos = []
+    state = "Cash"
+    for idx in range(len(df)):
+        cur = df["bb_pct"].iloc[idx]
+        prev = df["bb_pct"].iloc[idx - 1] if idx > 0 else np.nan
+        if (
+            state != "Long"
+            and pd.notna(cur)
+            and pd.notna(prev)
+            and prev <= 1
+            and cur > 1
+        ):
+            state = "Long"
+        elif (
+            state == "Long"
+            and pd.notna(cur)
+            and pd.notna(prev)
+            and prev >= 0
+            and cur < 0
+        ):
+            state = "Short"
+        bb_pos.append(state)
+
+    final_pos = [
+        m if m == b and m in {"Long", "Short"} else "Cash"
+        for m, b in zip(ma_pos, bb_pos)
+    ]
+    df["suggested_position"] = final_pos
     return df
 
 

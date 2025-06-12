@@ -7,7 +7,7 @@ from unittest import mock
 
 
 def test_compute_indicators_and_suggested_positions():
-    data = pd.DataFrame({'close': [1]*30 + [2]})
+    data = pd.DataFrame({'close': [1]*29 + [0.8, 1.5, 0.5]})
     result = compute_indicators_and_suggested_positions(data)
     ma30 = pd.Series(data['close']).rolling(30).mean()
     expected_ratio = data['close'] / ma30
@@ -21,6 +21,7 @@ def test_compute_indicators_and_suggested_positions():
     pd.testing.assert_series_equal(result['bb_pct'], expected_bb, check_names=False)
     assert result.loc[result.index[29], 'suggested_position'] == 'Cash'
     assert result.loc[result.index[30], 'suggested_position'] == 'Long'
+    assert result.loc[result.index[31], 'suggested_position'] == 'Short'
 
 
 def test_fetch_data():
