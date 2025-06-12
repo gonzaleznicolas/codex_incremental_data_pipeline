@@ -2,16 +2,26 @@ from pathlib import Path
 from sqlalchemy import (
     Column,
     Float,
+    Integer,
     MetaData,
     String,
     Table,
+    ForeignKey,
     create_engine,
+    select,
 )
 from sqlalchemy.engine import Engine
 
 DB_PATH = Path("data.db")
 
 metadata = MetaData()
+
+stocks = Table(
+    "stocks",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("symbol", String, unique=True, index=True),
+)
 
 prices = Table(
     "prices",
@@ -24,7 +34,7 @@ prices = Table(
     Column("volume", Float),
     Column("dividends", Float),
     Column("stock_splits", Float),
-    Column("symbol", String),
+    Column("stock_id", Integer, ForeignKey("stocks.id")),
     Column("price_over_ma30", Float),
 )
 

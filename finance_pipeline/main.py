@@ -1,7 +1,8 @@
 import pandas as pd
+from sqlalchemy import insert, select
 from sqlalchemy.engine import Engine
 from .data_fetcher import FetchConfig, fetch_data
-from .database import get_engine
+from .database import get_engine, stocks
 
 
 def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
@@ -24,7 +25,16 @@ def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
 
 def load_to_db(df: pd.DataFrame, engine: Engine | None = None) -> None:
     engine = engine or get_engine()
-    df.to_sql("prices", engine, if_exists="append", index_label="date")
+    with engine.begin() as conn:
+        existing = {row.symbol: row.id for row in conn.execute(select(stocks))}
+        for symbol in df["symbol"].unique():
+            if symbol not in existing:
+                result = conn.execute(insert(stocks).values(symbol=symbol))
+                existing[symbol] = result.inserted_primary_key[0]
+        df = df.copy()
+        df["stock_id"] = df["symbol"].map(existing)
+        df = df.drop(columns=["symbol"])
+        df.to_sql("prices", conn, if_exists="append", index_label="date")
 
 
 def run_pipeline(config: FetchConfig = FetchConfig()) -> None:
