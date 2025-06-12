@@ -5,20 +5,20 @@ from .database import get_engine
 
 
 def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
-    """Sort data and compute moving averages.
+    """Sort data and compute the price divided by the 30-day moving average.
 
     yfinance returns columns capitalized (e.g. ``Close``). To keep the
     database schema simple we normalise all column names to lowercase before
-    calculating the moving averages.
+    calculating the indicator.
     """
 
     # Normalise columns: lowercase and replace spaces with underscores
     df = df.rename(columns=lambda c: c.strip().lower().replace(" ", "_")).sort_index()
     df.index = pd.to_datetime(df.index).tz_localize(None)
 
-    # Calculate moving averages on the closing price
-    df["ma7"] = df["close"].rolling(window=7).mean()
-    df["ma30"] = df["close"].rolling(window=30).mean()
+    # Calculate 30-day moving average on the closing price and derive ratio
+    ma30 = df["close"].rolling(window=30).mean()
+    df["price_over_ma30"] = df["close"] / ma30
     return df
 
 

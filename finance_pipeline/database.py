@@ -25,8 +25,7 @@ prices = Table(
     Column("dividends", Float),
     Column("stock_splits", Float),
     Column("symbol", String),
-    Column("ma7", Float),
-    Column("ma30", Float),
+    Column("price_over_ma30", Float),
 )
 
 
