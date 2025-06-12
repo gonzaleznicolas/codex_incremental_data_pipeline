@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 from typing import List
 from dataclasses import dataclass, field
+from datetime import timedelta
 
 @dataclass
 class FetchConfig:
@@ -16,7 +17,9 @@ def fetch_data(config: FetchConfig) -> pd.DataFrame:
     for symbol in config.symbols:
         ticker = yf.Ticker(symbol)
         try:
-            hist = ticker.history(start=config.start, end=config.end)
+            start_dt = pd.to_datetime(config.start) - timedelta(days=30)
+            start_str = start_dt.strftime("%Y-%m-%d")
+            hist = ticker.history(start=start_str, end=config.end)
         except Exception as exc:
             print(f"Failed to fetch data for {symbol}: {exc}")
             continue

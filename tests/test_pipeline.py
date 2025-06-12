@@ -29,4 +29,4 @@ def test_fetch_data():
         df = fetch_data(cfg)
         assert not df.empty
         assert 'symbol' in df.columns
-        instance.history.assert_called_once()
+        instance.history.assert_called_once_with(start='2021-12-04', end='2022-01-10')
