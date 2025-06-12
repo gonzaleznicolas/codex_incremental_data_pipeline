@@ -1,12 +1,13 @@
 import pandas as pd
+import numpy as np
 from sqlalchemy import insert, select
 from sqlalchemy.engine import Engine
 from .data_fetcher import FetchConfig, fetch_data
-from .database import get_engine, stocks
+from .database import get_engine, stocks, position
 
 
-def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
-    """Sort data and compute the price divided by the 30-day moving average.
+def compute_indicators_and_suggested_positions(df: pd.DataFrame) -> pd.DataFrame:
+    """Sort data, compute indicators and derive a suggested trading position.
 
     yfinance returns columns capitalized (e.g. ``Close``). To keep the
     database schema simple we normalise all column names to lowercase before
@@ -20,6 +21,11 @@ def compute_moving_averages(df: pd.DataFrame) -> pd.DataFrame:
     # Calculate 30-day moving average on the closing price and derive ratio
     ma30 = df["close"].rolling(window=30).mean()
     df["price_over_ma30"] = df["close"] / ma30
+    df["suggested_position"] = np.where(
+        df["price_over_ma30"] > 1,
+        "Long",
+        np.where(df["price_over_ma30"] < 1, "Short", "Cash"),
+    )
     return df
 
 
@@ -31,8 +37,12 @@ def load_to_db(df: pd.DataFrame, engine: Engine | None = None) -> None:
             if symbol not in existing:
                 result = conn.execute(insert(stocks).values(symbol=symbol))
                 existing[symbol] = result.inserted_primary_key[0]
+
+        positions = {row.name: row.id for row in conn.execute(select(position))}
+
         df = df.copy()
         df["stock_id"] = df["symbol"].map(existing)
+        df["suggested_position"] = df["suggested_position"].map(positions)
         df = df.drop(columns=["symbol"])
         df.to_sql("prices", conn, if_exists="append", index_label="date")
 
@@ -42,7 +52,7 @@ def run_pipeline(config: FetchConfig = FetchConfig()) -> None:
     if data.empty:
         print("No data fetched")
         return
-    data = compute_moving_averages(data)
+    data = compute_indicators_and_suggested_positions(data)
     data = data.loc[pd.to_datetime(config.start): pd.to_datetime(config.end)]
     load_to_db(data)
 
