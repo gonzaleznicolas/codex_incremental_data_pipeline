@@ -5,11 +5,14 @@ from unittest import mock
 
 
 def test_compute_moving_averages():
-    data = pd.DataFrame({'close': [1,2,3,4,5,6,7,8,9,10]})
+    data = pd.DataFrame({'close': list(range(1, 40))})
     result = compute_moving_averages(data)
-    assert result['ma7'].iloc[6] == sum(range(1,8))/7
-    assert pd.isna(result['ma7'].iloc[5])
-    assert pd.isna(result['ma30'].iloc[-1])
+    ma30 = pd.Series(data['close']).rolling(30).mean()
+    expected_ratio = data['close'] / ma30
+    expected_ratio.index = result.index
+    pd.testing.assert_series_equal(result['price_over_ma30'], expected_ratio, check_names=False)
+    assert 'ma7' not in result.columns
+    assert 'ma30' not in result.columns
 
 
 def test_fetch_data():
